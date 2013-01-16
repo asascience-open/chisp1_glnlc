@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Nutrient Load Calculator</title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="http://code.jquery.com/ui/1.8.24/themes/base/jquery-ui.css">
+  <script src="http://code.jquery.com/jquery-1.8.2.js"></script>
+  <script src="http://code.jquery.com/ui/1.8.24/jquery-ui.js"></script>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="jquery.svg.min.js"></script>
+  
+  <style>
+    svg\:svg {
+      display: none;
+    }
+
+    .svg_error {
+      color: red;
+      font-weight: bold;
+    }
+
+    body, div, svg {
+      padding: 0;
+      margin: 0;
+      font-family: Verdana,Arial,sans-serif;
+      font-size: 22px;
+    }
+
+    .background {
+      fill: none;
+      pointer-events: all;
+    }
+
+    #lakes {
+      fill: #aaa;
+      stroke: #fff;
+      stroke-width: 1.5px;
+    }
+     
+    #lakes .active {
+      fill: steelblue;
+    }
+
+    #container {
+      width: 960px;
+      margin: 0 auto;
+    }
+
+    .row {
+      clear: both;
+    }
+     
+    .left {
+      text-align: center;
+      width: 200px;
+      float: left;
+      /*border: 1px solid #000;*/
+    }
+
+    .center {
+      text-align: center;
+      padding: 0;
+      margin: 0;
+      width: 500px;
+      float: left;
+      /*border: 1px solid #000;*/
+    }
+    .right {
+      text-align: center;
+      width: 180px;
+      float: left;
+      
+      /*border: 1px solid #000;*/
+    }
+    .nutrient {
+      margin-left: 68px;
+      width: 150px;
+      height: 150px;
+      float: left;
+    }
+
+    #first .left, #first .center, #first .right {
+      height: 300px;
+      line-height: 300px;
+    }
+    #second .left, #second .center, #second .right {
+      height: 150px;
+      line-height: 150px;
+    }
+    #third .left, #third .center, #third .right {
+      height: 220px;
+      line-height: 220px;
+      padding-top: 20px;
+    }
+    #fourth .left, #fourth .center, #fourth .right {
+      height: 100px;
+      line-height: 100px;
+      padding-top: 10px;
+    }
+    #third .center #datepicker {
+      margin : 0 auto;
+      line-height: 1em;
+      font-size: 0.7em;
+      width: 288px;
+    }
+    #fourth button {
+      margin : 0 auto;
+      width: 200px;
+      height: 50px;
+    }
+    .ui-widget-content .ui-state-active, .ui-state-active {
+      background: none;
+      background-color: #4682B4;
+      border: 1px solid #4682B4;
+      color: #fff;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <div id="container">
+
+    <div id="first" class="row">
+      <div class="left">Choose a Lake</div>
+      <div class="center"></div>
+      <div class="right"></div>
+    </div>
+
+    <div id="second" class="row">
+      <div class="left">Choose a Nutrient</div>
+      <div class="center">
+        <div id="nitrogen" name="Nitrogen" class="nutrient"></div>
+        <div id="phosphorus" name="Phosphorus" class="nutrient"></div>
+      </div>
+      <div class="right"></div>
+    </div>
+
+    <div id="third" class="row">
+      <div class="left">Choose a Date</div>
+      <div class="center">
+        <div id="datepicker"></div>
+      </div>
+      <div class="right"></div>
+    </div>
+
+    <div id="fourth" class="row">
+      <div class="left">&nbsp;</div>
+      <div class="center">
+        <button id="go">Calculate</button>
+      </div>
+      <div class="right"></div>
+    <div>
+
+  </div>
+
+  <script type="text/javascript">
+   
+    var wps_server = "http://64.72.74.103:8080/nlcs/";
+
+    var width = 500,
+        height = 300,
+        centered;
+     
+    var projection = d3.geo.albers()
+        .scale(1200)
+        .translate([-210,170]);
+     
+    var path = d3.geo.path()
+        .projection(projection);
+     
+    var svg = d3.select("#first .center").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+     
+    svg.append("rect")
+        .attr("class", "background")
+        .attr("width", width)
+        .attr("height", height)
+        .on("click", lakeclick);
+     
+    var g = svg.append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")")
+      .append("g")
+        .attr("id", "lakes");
+     
+    d3.json("gljs.json", function(json) {
+      g.selectAll("path")
+          .data(json.features)
+        .enter().append("path")
+          .attr("d", path)
+          .on("click", lakeclick);
+    });
+
+    function selected(name, d) {
+      d.find(".right").html(name);
+      d.find(".right").css("background-color", "#99ff66");
+      checkReady();
+    }
+    function unselected(d) {
+      d.find(".right").html("");
+      d.find(".right").css("background-color", "#ffffff");
+      checkReady();
+    }
+
+    function checkReady() {
+      var rdy = 0;
+      $(".right").each(function(r) {
+        if ($(this).html() != "") {
+          rdy += 1;
+        }
+      });
+      if (rdy == 3) {
+        $("#go").show();
+      } else {
+        $("#go").hide();
+      }
+    }
+
+    function lakeclick(d) {
+      var x = 0,
+          y = 0,
+          k = 1;
+     
+      if (d && centered !== d) {
+        var centroid = path.centroid(d);
+        x = -centroid[0];
+        y = -centroid[1];
+        k = 1.5;
+        centered = d;
+        selected(d.properties.name, $("#first"));
+      } else {
+        centered = null;
+        unselected($("#first"));
+      }
+     
+      g.selectAll("path")
+          .classed("active", centered && function(d) { return d === centered; });
+     
+      g.transition()
+          .duration(1000)
+          .attr("transform", "scale(" + k + ")translate(" + x + "," + y + ")")
+          .style("stroke-width", 1.5 / k + "px");
+    }
+
+    $(document).ready(function () {
+
+      $("#go").hide();
+      $("#go").click(function() {
+        var lake = $("#first .right").html().substring(5);
+        var nut = $("#second .right").html();
+        var dt = $("#third .right").html();
+        $.ajax({
+          url: wps_server,
+          type: "get",
+          dataType: 'jsonp',
+          data: "request=execute&version=1.0.0&identifier=calc_nutrient_load&datainputs=lake="+ lake + "%3Bdate=" + dt + "%3Bnutrient=" + nut,
+          success: function(){
+            alert("success");
+            checkWpsStatus();
+          },
+          error:function(){
+            alert("failure");
+          }   
+        });
+      });
+
+      $( "#datepicker" ).datepicker({
+        onSelect: function(t){ selected(t, $("#third")); }
+      });
+     
+      var nit = $("#nitrogen").svg({loadURL : "nitrogen.svg"})
+      var pho = $("#phosphorus").svg({loadURL : "phosphorus.svg"})
+
+      $(".nutrient").click(function() {
+        selected($(this).attr('name'), $("#second"));
+        $("svg #center").attr('fill', "#77868b");
+        $(this).find("#center").attr('fill', "#4682B4");
+      });
+     
+    });
+  </script>
+</body>
+</html>
