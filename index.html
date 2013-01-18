@@ -4,118 +4,12 @@
   <title>Nutrient Load Calculator</title>
   <meta charset="utf-8">
   <link rel="stylesheet" href="http://code.jquery.com/ui/1.8.24/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="style.css">
   <script src="http://code.jquery.com/jquery-1.8.2.js"></script>
   <script src="http://code.jquery.com/ui/1.8.24/jquery-ui.js"></script>
   <script src="http://d3js.org/d3.v3.min.js"></script>
   <script src="jquery.svg.min.js"></script>
-  
-  <style>
-    svg\:svg {
-      display: none;
-    }
-
-    .svg_error {
-      color: red;
-      font-weight: bold;
-    }
-
-    body, div, svg {
-      padding: 0;
-      margin: 0;
-      font-family: Verdana,Arial,sans-serif;
-      font-size: 22px;
-    }
-
-    .background {
-      fill: none;
-      pointer-events: all;
-    }
-
-    #lakes {
-      fill: #aaa;
-      stroke: #fff;
-      stroke-width: 1.5px;
-    }
-     
-    #lakes .active {
-      fill: steelblue;
-    }
-
-    #container {
-      width: 960px;
-      margin: 0 auto;
-    }
-
-    .row {
-      clear: both;
-    }
-     
-    .left {
-      text-align: center;
-      width: 200px;
-      float: left;
-      /*border: 1px solid #000;*/
-    }
-
-    .center {
-      text-align: center;
-      padding: 0;
-      margin: 0;
-      width: 500px;
-      float: left;
-      /*border: 1px solid #000;*/
-    }
-    .right {
-      text-align: center;
-      width: 180px;
-      float: left;
-      
-      /*border: 1px solid #000;*/
-    }
-    .nutrient {
-      margin-left: 68px;
-      width: 150px;
-      height: 150px;
-      float: left;
-    }
-
-    #first .left, #first .center, #first .right {
-      height: 300px;
-      line-height: 300px;
-    }
-    #second .left, #second .center, #second .right {
-      height: 150px;
-      line-height: 150px;
-    }
-    #third .left, #third .center, #third .right {
-      height: 220px;
-      line-height: 220px;
-      padding-top: 20px;
-    }
-    #fourth .left, #fourth .center, #fourth .right {
-      height: 100px;
-      line-height: 100px;
-      padding-top: 10px;
-    }
-    #third .center #datepicker {
-      margin : 0 auto;
-      line-height: 1em;
-      font-size: 0.7em;
-      width: 288px;
-    }
-    #fourth button {
-      margin : 0 auto;
-      width: 200px;
-      height: 50px;
-    }
-    .ui-widget-content .ui-state-active, .ui-state-active {
-      background: none;
-      background-color: #4682B4;
-      border: 1px solid #4682B4;
-      color: #fff;
-    }
-
-  </style>
+  <script src="spin.min.js"></script>
 </head>
 
 <body>
@@ -148,27 +42,39 @@
     <div id="fourth" class="row">
       <div class="left">&nbsp;</div>
       <div class="center">
-        <button id="go">Calculate</button>
+        <input type="button" id="go" value="Calculate"></input>
       </div>
       <div class="right"></div>
-    <div>
-
+    </div>
   </div>
+
+  <div id="spinner" class="row">
+    <span class="status">Started</span>
+  </div>
+  <div id="results" class="row"></div>
 
   <script type="text/javascript">
    
+    var dev = true;
+
     var wps_server = "http://64.72.74.103:8080/nlcs/";
 
     var width = 500,
         height = 300,
         centered;
      
+    var click_x = 0;
+    var click_y = 0;
+    var click_lake = "";
+    var send_nutrient = "";
+    var send_date = "";
+    var spinner = null;
+
     var projection = d3.geo.albers()
         .scale(1200)
         .translate([-210,170]);
      
-    var path = d3.geo.path()
-        .projection(projection);
+    var path = d3.geo.path().projection(projection);
      
     var svg = d3.select("#first .center").append("svg")
         .attr("width", width)
@@ -193,6 +99,105 @@
           .on("click", lakeclick);
     });
 
+    function drawStatus() {
+      var spin_opts = {
+        lines: 17, // The number of lines to draw
+        length: 30, // The length of each line
+        width: 9, // The line thickness
+        radius: 40, // The radius of the inner circle
+        corners: 1, // Corner roundness (0..1)
+        rotate: 68, // The rotation offset
+        color: '#000', // #rgb or #rrggbb
+        speed: 1.0, // Rounds per second
+        trail: 25, // Afterglow percentage
+        shadow: false, // Whether to render a shadow
+        hwaccel: false, // Whether to use hardware acceleration
+        className: 'spinner', // The CSS class to assign to the spinner
+        zIndex: 2e9, // The z-index (defaults to 2000000000)
+        top: 'auto', // Top position relative to parent in px
+        left: 'auto' // Left position relative to parent in px
+      };
+
+      $("#spinner").css("height", $(window).height());
+      
+      var target = document.getElementById('spinner');
+      spinner = new Spinner(spin_opts).spin(target);
+      $('#spinner').css("display", "block");
+
+      $(".spinner").css("top", ($(window).height() / 2) + $(".spinner").height());
+      $(".status").css("top", ($(window).height() / 2) + $(".spinner").height() - 120);
+
+      $('html, body').animate({ 
+        scrollTop: $("#spinner").offset().top },
+        1000, 
+        "swing"
+      );
+    }
+
+    function drawResults() {
+
+      var width = $(window).width();
+      var height = $(window).height();
+
+      console.log("Height: " + height);
+      console.log("Width: " + width);
+
+      var scale = 7;
+      if (height < 768 || width < 900) {
+        scale = 5;
+      } else if (height < 600 || width < 700) {
+        scale = 4;
+      }
+
+      if (click_lake == "Michigan") {
+        scale += 1;
+      } else if (click_lake == "Erie") {
+        scale += 4;
+      } else if (click_lake == "Huron") {
+        scale += 2;
+      } else if (click_lake == "Superior") {
+        scale += 0;
+      } else if (click_lake == "Ontario") {
+        scale += 6;
+      }
+
+      $('#results').css("display", "block");
+      $("#results").html("");
+      var svg = d3.select("#results").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+     
+      svg.append("rect")
+          .attr("class", "background")
+          .attr("width", width)
+          .attr("height", height);
+       
+      var g = svg.append("g")
+          .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")")
+        .append("g")
+          .attr("id", "lakes");
+       
+      d3.json("gljs.json", function(json) {
+        g.selectAll("path")
+            .data(json.features)
+          .enter().append("path")
+            .attr("d", path);
+      });
+
+      $("#results").css("height", height);
+      $("#results").css("width", width);
+
+      $('html, body').animate({ 
+        scrollTop: $("#results").offset().top },
+        1000, 
+        "swing"
+      );
+
+      g.transition()
+          .duration(3000)
+          .attr("transform", "scale(" + scale + ")translate(" + click_x + "," + click_y + ")");
+    }
+
     function selected(name, d) {
       d.find(".right").html(name);
       d.find(".right").css("background-color", "#99ff66");
@@ -205,13 +210,7 @@
     }
 
     function checkReady() {
-      var rdy = 0;
-      $(".right").each(function(r) {
-        if ($(this).html() != "") {
-          rdy += 1;
-        }
-      });
-      if (rdy == 3) {
+      if (click_lake != "" && send_nutrient != "" && send_date != "") {
         $("#go").show();
       } else {
         $("#go").hide();
@@ -219,19 +218,19 @@
     }
 
     function lakeclick(d) {
-      var x = 0,
-          y = 0,
-          k = 1;
+      var k = 1;
      
       if (d && centered !== d) {
         var centroid = path.centroid(d);
-        x = -centroid[0];
-        y = -centroid[1];
+        click_x = -centroid[0];
+        click_y = -centroid[1];
         k = 1.5;
         centered = d;
+        click_lake = d.properties.name.substring(5);
         selected(d.properties.name, $("#first"));
       } else {
         centered = null;
+        click_lake = "";
         unselected($("#first"));
       }
      
@@ -240,43 +239,140 @@
      
       g.transition()
           .duration(1000)
-          .attr("transform", "scale(" + k + ")translate(" + x + "," + y + ")")
-          .style("stroke-width", 1.5 / k + "px");
+          .attr("transform", "scale(" + k + ")translate(" + click_x + "," + click_y + ")");
+    }
+
+    function parseExecute(x) {
+      var statusLocation = $($.parseXML(x.data)).find("ExecuteResponse").attr("statusLocation");
+
+      (function poll() {
+        if (dev == true) {
+          setTimeout(function() {
+            var s = { data: '<wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" service="WPS" version="1.0.0" statusLocation="http://64.72.74.103:8080/outputs/03b20caf-30e8-4932-a184-da33e4e7f374.xml"><wps:Process processVersion="1.0"><ows:Identifier>calc_nutrient_load</ows:Identifier><ows:Title>Nutrient load calculation service for the Great Lakes</ows:Title><ows:Abstract>WPS for CHISP1 Scenario #2 that calculates the nutrient loading of the Great Lakes by each tributary</ows:Abstract></wps:Process><wps:Status creationTime="2013-01-16 15:44:50.905420">Process (calc_nutrient_load) has Succeeded at 2013-01-16 17:21:59.012699</wps:Status><wps:ProcessOutputs><wps:Output><ows:Identifier>nlcs_output</ows:Identifier><ows:Title>Great Lakes Nutrient Load Calculation Output</ows:Title><wps:Data><wps:ComplexData mimeType="text/xml"><!-- Start Dummy Data --><Lake name="Ontario" load="500"><Rivers><River name="My Test Tributary 1" lat="41" lon="74" load="300" contribution="60%"/><River name="My Test Tributary 2" lat="41" lon="73" load="300" contribution="20%"/><River name="My Test Tributary 3" lat="42" lon="73" load="300" contribution="80%"/></Rivers></Lake><!-- End Dummy Data --></wps:ComplexData></wps:Data></wps:Output></wps:ProcessOutputs></wps:ExecuteResponse>'}
+            var lakexml = $($.parseXML(s.data)).find("ComplexData").find("Lake");
+            spinner.stop();
+            showResults(lakexml);
+          }, 5000);
+        } else {
+          setTimeout(function() {
+            $.ajax({
+              url: statusLocation,
+              type: "get",
+              dataType: "jsonp",
+              crossDomain: true,
+              timeout: 9000,
+              success: function(s) {
+                // var s = { data: '<wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" service="WPS" version="1.0.0" statusLocation="http://64.72.74.103:8080/outputs/03b20caf-30e8-4932-a184-da33e4e7f374.xml"><wps:Process processVersion="1.0"><ows:Identifier>calc_nutrient_load</ows:Identifier><ows:Title>Nutrient load calculation service for the Great Lakes</ows:Title><ows:Abstract>WPS for CHISP1 Scenario #2 that calculates the nutrient loading of the Great Lakes by each tributary</ows:Abstract></wps:Process><wps:Status creationTime="2013-01-16 15:44:50.905420">Process (calc_nutrient_load) has Succeeded at 2013-01-16 17:21:59.012699</wps:Status><wps:ProcessOutputs><wps:Output><ows:Identifier>nlcs_output</ows:Identifier><ows:Title>Great Lakes Nutrient Load Calculation Output</ows:Title><wps:Data><wps:ComplexData mimeType="text/xml"><!-- Start Dummy Data --><Lake name="Ontario" load="500"><Rivers><River name="My Test Tributary 1" lat="41" lon="74" load="300" contribution="60%"/><River name="My Test Tributary 2" lat="41" lon="73" load="300" contribution="20%"/><River name="My Test Tributary 3" lat="42" lon="73" load="300" contribution="80%"/></Rivers></Lake><!-- End Dummy Data --></wps:ComplexData></wps:Data></wps:Output></wps:ProcessOutputs></wps:ExecuteResponse>'}
+                var lakexml = $($.parseXML(s.data)).find("ComplexData").find("Lake");
+                if (lakexml.length == 0) {
+                  // No results yet, try again.
+                  poll();
+                } else {
+                  showResults(lakexml);
+                }
+              },
+              error:function(x, t, m) {
+                console.log(t);
+                if (t == "timeout") {
+                  console.log("Timeout, trying again");
+                  poll();
+                } else {
+                  console.log("Failure");
+                  alert("Failure");
+                }
+              },
+              complete:function() {
+                spinner.stop();
+              }
+            });
+          }, 10000);
+        }
+      })();
+    }
+
+    function showResults(load_xml) {
+
+      var lake_name = $(load_xml).attr("name");
+      var load = $(load_xml).attr("load");
+      var load_json = {
+        "type": "FeatureCollection",                                                                                
+        "features": []
+      }
+
+      $(load_xml).find("River").each(function(i,v) {
+        load_json["features"].push(
+          {
+            "type": "Feature", 
+            "properties": {
+              "id" : i,  
+              "name" : $(this).attr("name"),
+              "load" : $(this).attr("load"),
+              "contribution" : $(this).attr("contribution") 
+            },
+            "geometry" : { 
+              "type" : "Point", 
+              "coodinates" : [$(this).attr("lon"), $(this).attr("lat")] 
+            }
+          })
+      });
+
+      drawResults();
+
+      // TODO: Build stations as SVG elements
     }
 
     $(document).ready(function () {
 
       $("#go").hide();
       $("#go").click(function() {
-        var lake = $("#first .right").html().substring(5);
-        var nut = $("#second .right").html();
-        var dt = $("#third .right").html();
-        $.ajax({
-          url: wps_server,
-          type: "get",
-          dataType: 'jsonp',
-          data: "request=execute&version=1.0.0&identifier=calc_nutrient_load&datainputs=lake="+ lake + "%3Bdate=" + dt + "%3Bnutrient=" + nut,
-          success: function(){
-            alert("success");
-            checkWpsStatus();
-          },
-          error:function(){
-            alert("failure");
-          }   
-        });
+        drawStatus();
+
+        if (dev == true) {
+          var x = { data:'<?xml version="1.0" encoding="UTF-8"?><wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" service="WPS" version="1.0.0" statusLocation="http://64.72.74.103:8080/outputs/d6d64f4a-ea62-47de-9240-4db73ee363c1.xml">  <wps:Process processVersion="1.0">        <ows:Identifier>calc_nutrient_load</ows:Identifier>        <ows:Title>Nutrient load calculation service for the Great Lakes</ows:Title>        <ows:Abstract>WPS for CHISP1 Scenario #2 that calculates the nutrient loading of the Great Lakes by each tributary</ows:Abstract>    </wps:Process>    <wps:Status creationTime="2013-01-17 10:56:14.791113">      Process (calc_nutrient_load) has Started Processing    </wps:Status>    <wps:ProcessOutputs>        <wps:Output>            <ows:Identifier>nlcs_output</ows:Identifier>            <ows:Title>Great Lakes Nutrient Load Calculation Output</ows:Title>            <wps:Data>                <wps:ComplexData mimeType="text/xml">                    <!--Start Dummy Data-->                                        <!--End Dummy Data-->                </wps:ComplexData>      </wps:Data>    </wps:Output>  </wps:ProcessOutputs></wps:ExecuteResponse>'}
+          parseExecute(x);
+        } else {
+          $.ajax({
+            url: wps_server,
+            type: "get",
+            data: {
+              request: "execute",
+              version: "1.0.0",
+              identifier: "calc_nutrient_load",
+              datainputs: "lake="+ click_lake + ";date=" + send_date + ";nutrient=" + send_nutrient
+            },
+            dataType: "jsonp",
+            crossDomain: true,
+            success: function(x) {
+              parseExecute(x);
+            },
+            error:function(x, t, m) {
+              if (t == "timeout") {
+                console.log("Timeout, trying again.");
+                $("#go").trigger("click");
+              }
+              console.log("Failure");
+              alert("Failure");
+            }
+          });
+        }
       });
 
       $( "#datepicker" ).datepicker({
-        onSelect: function(t){ selected(t, $("#third")); }
+        dateFormat: $.datepicker.ISO_8601,
+        onSelect: function(t) {
+          send_date = t
+          selected($.datepicker.formatDate("M d yy", $.datepicker.parseDate($.datepicker.ISO_8601, t)), $("#third"));
+        }
       });
      
-      var nit = $("#nitrogen").svg({loadURL : "nitrogen.svg"})
+      var nit = $("#nitrogen").svg({loadURL : "nitrogen.svg"});
       var pho = $("#phosphorus").svg({loadURL : "phosphorus.svg"})
 
       $(".nutrient").click(function() {
-        selected($(this).attr('name'), $("#second"));
         $("svg #center").attr('fill', "#77868b");
         $(this).find("#center").attr('fill', "#4682B4");
+        send_nutrient = $(this).attr('name');
+        selected(send_nutrient, $("#second"));
       });
      
     });

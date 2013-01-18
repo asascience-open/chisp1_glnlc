@@ -1,0 +1,126 @@
+svg\:svg {
+  display: none;
+}
+
+.svg_error {
+  color: red;
+  font-weight: bold;
+}
+
+body, div, svg {
+  padding: 0;
+  margin: 0;
+  font-family: Verdana,Arial,sans-serif;
+  font-size: 22px;
+}
+
+.background {
+  fill: none;
+  pointer-events: all;
+}
+
+#lakes {
+  fill: #aaa;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+ 
+#lakes .active {
+  fill: steelblue;
+}
+
+#container {
+  width: 880px;
+  margin: 0 auto;
+}
+
+.row {
+  clear: both;
+  overflow: hidden;
+}
+ 
+.left {
+  text-align: center;
+  width: 200px;
+  float: left;
+}
+
+.center {
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  width: 500px;
+  float: left;
+}
+.right {
+  text-align: center;
+  width: 180px;
+  float: left;
+}
+.nutrient {
+  margin-left: 68px;
+  width: 150px;
+  height: 150px;
+  float: left;
+}
+
+#first .left, #first .center, #first .right {
+  height: 300px;
+  line-height: 300px;
+}
+#second .left, #second .center, #second .right {
+  height: 150px;
+  line-height: 150px;
+}
+#third .left, #third .center, #third .right {
+  height: 225px;
+  line-height: 220px;
+  padding-top: 20px;
+}
+#fourth .left, #fourth .center, #fourth .right {
+  height: 100px;
+  line-height: 100px;
+  padding-top: 10px;
+}
+#third .center #datepicker {
+  margin : 0 auto;
+  line-height: 1em;
+  font-size: 0.7em;
+  width: 288px;
+}
+#fourth input {
+  margin : 0 auto;
+  width: 200px;
+  height: 50px;
+}
+.ui-widget-content .ui-state-active, .ui-state-active {
+  background: none;
+  background-color: #4682B4;
+  border: 1px solid #4682B4;
+  color: #fff;
+}
+
+#spinner {
+  text-align: center;
+  width: 880px;
+  margin: 2000px auto 0px auto;
+  text-align: center;
+  display: none;
+}
+
+.spinner {
+  margin: 0 auto;
+}
+
+.status {
+  position: relative;
+}
+
+#results {
+  text-align: center;
+  width: 880px;
+  height: 880px;
+  margin: 4000px auto 0px auto;
+  text-align: center;
+  display: none;
+}
