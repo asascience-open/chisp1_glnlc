@@ -34,9 +34,14 @@
     </div>
 
     <div id="third" class="row">
-      <div class="left">Choose a Date</div>
+      <div class="left">Choose a Date<br />and Duration</div>
       <div class="center">
         <div id="datepicker"></div>
+        <select id="duration" name="duration">
+          <option id="year" value="year"></option>
+          <option id="month" value="month"></option>
+          <option id="day" value="day"></option>
+        </select>
       </div>
       <div class="right"></div>
     </div>
@@ -70,6 +75,7 @@
     var click_lake = "";
     var send_nutrient = "";
     var send_date = "";
+    var send_duration = "";
     var spinner = null;
 
     var projection = d3.geo.albers()
@@ -272,7 +278,7 @@
     }
 
     function checkReady() {
-      if (click_lake != "" && send_nutrient != "" && send_date != "") {
+      if (click_lake != "" && send_nutrient != "" && send_date != "" && send_duration != "") {
         $("#go").show();
       } else {
         $("#go").hide();
@@ -397,7 +403,7 @@
         drawStatus();
 
         if (dev == true) {
-          var x = { data:'<?xml version="1.0" encoding="UTF-8"?><wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" service="WPS" version="1.0.0" statusLocation="http://64.72.74.103:8080/outputs/d6d64f4a-ea62-47de-9240-4db73ee363c1.xml">  <wps:Process processVersion="1.0">        <ows:Identifier>calc_nutrient_load</ows:Identifier>        <ows:Title>Nutrient load calculation service for the Great Lakes</ows:Title>        <ows:Abstract>WPS for CHISP1 Scenario #2 that calculates the nutrient loading of the Great Lakes by each tributary</ows:Abstract>    </wps:Process>    <wps:Status creationTime="2013-01-17 10:56:14.791113">      Process (calc_nutrient_load) has Started Processing    </wps:Status>    <wps:ProcessOutputs>        <wps:Output>            <ows:Identifier>nlcs_output</ows:Identifier>            <ows:Title>Great Lakes Nutrient Load Calculation Output</ows:Title>            <wps:Data>                <wps:ComplexData mimeType="text/xml">                    <!--Start Dummy Data-->                                        <!--End Dummy Data-->                </wps:ComplexData>      </wps:Data>    </wps:Output>  </wps:ProcessOutputs></wps:ExecuteResponse>'}
+          var x = { data:'<?xml version="1.0" encoding="UTF-8"?> <wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" service="WPS" version="1.0.0" statusLocation="http://64.72.74.103:8080/outputs/3c31262d-6c90-4849-b545-b8939ab80758.xml"> <wps:Process processVersion="1.0"> <ows:Identifier>calc_nutrient_load</ows:Identifier> <ows:Title>Nutrient load calculation service for the Great Lakes</ows:Title> <ows:Abstract>WPS for CHISP1 Scenario #2 that calculates the nutrient loading of the Great Lakes by each tributary</ows:Abstract> </wps:Process> <wps:Status creationTime="2013-03-26 09:23:53.434805"> Process (calc_nutrient_load) has Succeeded at 2013-03-26 09:24:34.947121 </wps:Status> <wps:ProcessOutputs> <wps:Output> <ows:Identifier>nlcs_output</ows:Identifier> <ows:Title>Great Lakes Nutrient Load Calculation Output</ows:Title> <wps:Data> <wps:ComplexData mimeType="text/xml"> <Lake name="ontario" load="82924.1533979"> <Rivers> <River name="My Test Tributary" lat="44" lon="-75" load="41462.0766989" contribution="0.5" /> <River name="My Test Tributary" lat="44" lon="-75.6" load="41462.0766989" contribution="0.5" /> </Rivers> </Lake> </wps:ComplexData> </wps:Data> </wps:Output> </wps:ProcessOutputs> </wps:ExecuteResponse>' }
           parseExecute(x);
         } else {
           $.ajax({
@@ -407,7 +413,7 @@
               request: "execute",
               version: "1.0.0",
               identifier: "calc_nutrient_load",
-              datainputs: "lake="+ click_lake + ";date=" + send_date + ";nutrient=" + send_nutrient
+              datainputs: "duration=" + send_duration + ";lake=" + click_lake + ";date=" + send_date + ";nutrient=" + send_nutrient
             },
             dataType: "jsonp",
             crossDomain: true,
@@ -425,11 +431,20 @@
         }
       });
 
+      $( "#duration" ).change(function(e) {
+        send_duration = $("#duration").val();
+        selected($("#duration option:selected").html(), $("#third"));
+      });
+
       $( "#datepicker" ).datepicker({
         dateFormat: $.datepicker.ISO_8601,
         onSelect: function(t) {
-          send_date = t
-          selected($.datepicker.formatDate("M d yy", $.datepicker.parseDate($.datepicker.ISO_8601, t)), $("#third"));
+          // What to pass to WPS
+          send_date = t;
+          $("#year").html($.datepicker.formatDate("yy", $.datepicker.parseDate($.datepicker.ISO_8601, t)));
+          $("#month").html($.datepicker.formatDate("M yy", $.datepicker.parseDate($.datepicker.ISO_8601, t)));
+          $("#day").html($.datepicker.formatDate("M d yy", $.datepicker.parseDate($.datepicker.ISO_8601, t)));
+          $( "#duration" ).change();
         }
       });
      

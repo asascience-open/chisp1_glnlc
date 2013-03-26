@@ -80,9 +80,12 @@ body, div, svg {
   line-height: 150px;
 }
 #third .left, #third .center, #third .right {
-  height: 225px;
-  line-height: 220px;
-  padding-top: 20px;
+  height: 200px;
+  line-height: 30px;
+  padding-top: 40px;
+}
+#third .left, #third .right {
+  padding-top: 120px;
 }
 #fourth .left, #fourth .center, #fourth .right {
   height: 100px;
@@ -94,6 +97,9 @@ body, div, svg {
   line-height: 1em;
   font-size: 0.7em;
   width: 288px;
+}
+#third select {
+  width: 120px;
 }
 #fourth input {
   margin : 0 auto;
