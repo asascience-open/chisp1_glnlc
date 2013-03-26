@@ -110,7 +110,7 @@ body, div, svg {
 #spinner {
   text-align: center;
   width: 880px;
-  margin: 2000px auto 0px auto;
+  margin: 0px auto 0px auto;
   text-align: center;
   display: none;
 }
@@ -128,12 +128,10 @@ body, div, svg {
   text-align: center;
   width: 880px;
   height: 880px;
-  margin: 4000px auto 0px auto;
+  margin: 0px auto 0px auto;
   text-align: center;
   display: none;
 }
-
-
 
 .load-0-10 { fill:rgb(247,251,255); } /* #F7FBFF */
 .load-1-10 { fill:rgb(222,235,247); } /* #DEEBF7 */

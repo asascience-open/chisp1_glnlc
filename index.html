@@ -124,7 +124,10 @@
       
       var target = document.getElementById('spinner');
       spinner = new Spinner(spin_opts).spin(target);
+      $('#spinner').css("margin-top", $(window).height());
       $('#spinner').css("display", "block");
+
+
 
       $(".spinner").css("top", ($(window).height() / 2) + $(".spinner").height());
       $(".status").css("top", ($(window).height() / 2) + $(".spinner").height() - 120);
@@ -162,6 +165,8 @@
 
       $('#results').html("");
       $('#results').css("display", "block");
+      $('#spinner').css("margin-top", $(window).height());
+
        
       d3.select("#results").append("div")
         .attr("id", "load_legend")
