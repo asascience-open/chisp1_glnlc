@@ -81,7 +81,7 @@
         .scale(1200)
         .translate([-210,170]);
      
-    var path = d3.geo.path().projection(projection);
+    var path = d3.geo.path().projection(projection).pointRadius(1.5);
      
     var svg = d3.select("#first .center").append("svg")
         .attr("width", width)
@@ -144,7 +144,7 @@
       );
     }
 
-    function drawResults(load_json) {
+    function drawResults(total_load, load_json) {
 
       var width = $(window).width();
       var height = $(window).height();
@@ -172,14 +172,38 @@
       $('#results').css("display", "block");
       $('#spinner').css("margin-top", $(window).height());
 
-       
-      d3.select("#results").append("div")
-        .attr("id", "load_legend")
-        .attr("class", "legend");
+      $("#results").append($("<div />")
+        .attr("id", "results_header")
+        .css("position", "absolute")
+        .css("width", "100%")
+        .css("text-align", "center")
 
-      d3.select("#results").append("div")
-        .attr("id", "cont_legend")
-        .attr("class", "legend");
+        .append($("<div />")
+          .attr("id", "final_load")
+          .css("float", "left")
+          .css("width", "500px")
+          .css("text-align", "center")
+          .css("margin", "0 auto"))
+
+        .append($("<div />")
+          .attr("id", "cont_legend")
+          .css("float", "right")
+          .css("width", "200px"))
+
+        .append($("<div />")
+          .attr("id", "load_legend")
+          .css("float", "right")
+          .css("width", "200px"))
+
+        );
+
+      $("#final_load")
+        .css("text-align", "left")
+        .css("padding","5px")
+        .css("background-color","rgba(221,221,221,0.6)")
+        .append($("<span />").css("font-size", "20px").css("text-decoration","underline").html(send_nutrient + " in Lake " + click_lake + " during " + $("#duration option:selected").html()))        
+        .append($("<br />"))
+        .append($("<span />").css("font-size", "18px").html("Total Load: " + total_load));
 
       var svg = d3.select("#results").append("svg")
         .attr("width", width)
@@ -196,17 +220,33 @@
           .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")")
 
       var lakes = g.append("g").attr("class", "lakes");
+      var rivers = g.append("g").attr("class", "rivers");
       var stations = g.append("g").attr("class", "stations");
 
       d3.json("gljs.json", function(json) {
         lakes.selectAll("path")
           .data(json.features)
-          .enter()
-            .append("path")
-              .attr("d", path);
+        .enter()
+          .append("path")
+            .attr("d", path);
       });
 
-      loads = load_json.features.map(function(n) { return n.properties.load });
+      d3.json("glrivers.json", function(json) {
+        rivers.selectAll("path")
+          .data(json.features)
+        .enter()
+          .append("path")
+            .attr("d", path);
+      });
+/*
+        rivers.selectAll("path")
+          .data(json.features)
+        .enter()
+          .append("path")
+            .attr("d", path);
+      });
+*/
+      loads = jQuery.unique(load_json.features.map(function(n) { return n.properties.load }));
       conts = load_json.features.map(function(n) { return n.properties.contribution });
 
       var load_scale = d3.scale.quantile()
@@ -214,31 +254,35 @@
                         .range(d3.range( d3.min([loads.length, 10]) ).map(function(i) { return "load-" + i + "-10"; }));
 
       var cont_scale = d3.scale.quantile()
-                        .domain(conts)
-                        .range(d3.range( d3.min([conts.length, 10]) ).map(function(i) { return "cont-" + i + "-10"; }));
+                        .domain(d3.range(0,1,0.1))
+                        .range(d3.range(10).map(function(i) { return "cont-" + i + "-10"; }));
 
       var loads_legend = new geostats(loads);
-      var conts_legend = new geostats(conts);
-
       loads_legend.getQuantile(d3.min([loads.length, 10]));
-      conts_legend.getQuantile(d3.min([conts.length, 10]));
-
       var load_colors = ["#F7FBFF","#DEEBF7","#C6DBEF","#9ECAE1","#6BAED6","#4292C6","#2171B5","#08519C","#08306B","#080864"]
       load_colors = load_colors.slice(0, d3.min([loads.length, 10]));
 
-      $("#load_legend").html(loads_legend.getHtmlLegend(load_colors, 'Load', null, function(c) { return Math.round(c); }));
-      $("#cont_legend").html(conts_legend.getHtmlLegend(load_colors, 'Contribution', null, function(c) { return (c * 100).toString() + "%"; }));
+      var conts_legend = new geostats(d3.range(0,1.1,0.1));
+      conts_legend.getQuantile(10);
+      var cont_colors = ["#F7FBFF","#DEEBF7","#C6DBEF","#9ECAE1","#6BAED6","#4292C6","#2171B5","#08519C","#08306B","#080864"]
+
+      $("#load_legend").css("padding","5px").css("background-color","rgba(221,221,221,0.6)").html(loads_legend.getHtmlLegend(load_colors, 'Load (outline)', null, function(c) { return Math.round(c); }));
+      $("#cont_legend").css("padding","5px").css("background-color","rgba(221,221,221,0.6)").html(conts_legend.getHtmlLegend(cont_colors, 'Contribution (fill)', null, function(c) { return (c * 100).toString() + "%"; }));
 
       stations.selectAll("path")
-          .data(load_json.features)
+            .data(load_json.features)
           .enter()
             .append("path")
               .attr("d", path)
               .attr("class", function(n) {
-                return load_scale(n.properties.load) + " " + cont_scale(n.properties.contribution);
+                return "svg_station " + load_scale(n.properties.load) + " " + cont_scale(n.properties.contribution);
               });
-      
+
       lakes.transition()
+        .duration(3000)
+        .attr("transform", "scale(" + scale + ")translate(" + click_x + "," + click_y + ")");
+
+      rivers.transition()
         .duration(3000)
         .attr("transform", "scale(" + scale + ")translate(" + click_x + "," + click_y + ")");
 
@@ -317,7 +361,7 @@
       (function poll() {
         if (dev == true) {
           setTimeout(function() {
-            var s = { data: '<wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" service="WPS" version="1.0.0" statusLocation="http://64.72.74.103:8080/outputs/03b20caf-30e8-4932-a184-da33e4e7f374.xml"><wps:Process processVersion="1.0"><ows:Identifier>calc_nutrient_load</ows:Identifier><ows:Title>Nutrient load calculation service for the Great Lakes</ows:Title><ows:Abstract>WPS for CHISP1 Scenario #2 that calculates the nutrient loading of the Great Lakes by each tributary</ows:Abstract></wps:Process><wps:Status creationTime="2013-01-16 15:44:50.905420">Process (calc_nutrient_load) has Succeeded at 2013-01-16 17:21:59.012699</wps:Status><wps:ProcessOutputs><wps:Output><ows:Identifier>nlcs_output</ows:Identifier><ows:Title>Great Lakes Nutrient Load Calculation Output</ows:Title><wps:Data><wps:ComplexData mimeType="text/xml"><!-- Start Dummy Data --><Lake name="Ontario" load="500"><Rivers><River name="My Test Tributary 1" lat="45.5" lon="-82.2" load="300" contribution="30%"/><River name="My Test Tributary 2" lat="45.4" lon="-82.1" load="600" contribution="20%"/><River name="My Test Tributary 3" lat="45" lon="-83" load="900" contribution="50%"/></Rivers></Lake><!-- End Dummy Data --></wps:ComplexData></wps:Data></wps:Output></wps:ProcessOutputs></wps:ExecuteResponse>'}
+            var s = { data: '<?xml version="1.0" encoding="UTF-8"?> <wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" service="WPS" version="1.0.0" statusLocation="http://64.72.74.103:8080/outputs/3c31262d-6c90-4849-b545-b8939ab80758.xml"> <wps:Process processVersion="1.0"> <ows:Identifier>calc_nutrient_load</ows:Identifier> <ows:Title>Nutrient load calculation service for the Great Lakes</ows:Title> <ows:Abstract>WPS for CHISP1 Scenario #2 that calculates the nutrient loading of the Great Lakes by each tributary</ows:Abstract> </wps:Process> <wps:Status creationTime="2013-03-26 09:23:53.434805"> Process (calc_nutrient_load) has Succeeded at 2013-03-26 09:24:34.947121 </wps:Status> <wps:ProcessOutputs> <wps:Output> <ows:Identifier>nlcs_output</ows:Identifier> <ows:Title>Great Lakes Nutrient Load Calculation Output</ows:Title> <wps:Data> <wps:ComplexData mimeType="text/xml"> <Lake name="ontario" load="92924.1533979"> <Rivers> <River name="My Test Tributary" lat="44" lon="-75" load="51462.0766989" contribution="0.5" /> <River name="My Test Tributary" lat="44" lon="-75.6" load="41462.0766989" contribution="0.5" /> </Rivers> </Lake> </wps:ComplexData> </wps:Data> </wps:Output> </wps:ProcessOutputs> </wps:ExecuteResponse>'}
             var doc = $.parseXML(s.data);
             updateStatus($(doc).find("Status").text());
             var lakexml = $(doc).find("ComplexData").find("Lake");
@@ -367,8 +411,7 @@
 
       updateStatus("");
 
-      var lake_name = $(load_xml).attr("name");
-      var load = $(load_xml).attr("load");
+      var total_load = $(load_xml).attr("load");
       var load_json = {
         "type": "FeatureCollection",                                                                                
         "features": []
@@ -382,7 +425,7 @@
               "id": i + 1,  
               "name": $(this).attr("name"),
               "load": parseFloat($(this).attr("load")),
-              "contribution": parseFloat($(this).attr("contribution")) / 100
+              "contribution": parseFloat($(this).attr("contribution"))
             },
             "geometry": { 
               "type": "Point",
@@ -392,7 +435,7 @@
       });
 
       // Make the results visible and zoom to it.
-      drawResults(load_json);
+      drawResults(total_load, load_json);
     }
 
     $(document).ready(function () {

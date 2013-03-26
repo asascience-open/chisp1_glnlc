@@ -23,6 +23,12 @@ body, div, svg {
   fill: #aaa;
 }
 
+.rivers {
+  fill: none;
+  stroke-width: 0.2px;
+  stroke: #aaa;
+}
+
 .small_lakes {
   stroke: #fff;
   stroke-width: 1.5px;
@@ -30,10 +36,6 @@ body, div, svg {
  
 .lakes .active {
   fill: steelblue;
-}
-
-.station {
-  fill: red;
 }
 
 #container {
@@ -139,16 +141,17 @@ body, div, svg {
   display: none;
 }
 
-.load-0-10 { fill:rgb(247,251,255); } /* #F7FBFF */
-.load-1-10 { fill:rgb(222,235,247); } /* #DEEBF7 */
-.load-2-10 { fill:rgb(198,219,239); } /* #C6DBEF */
-.load-3-10 { fill:rgb(158,202,225); } /* #9ECAE1 */
-.load-4-10 { fill:rgb(107,174,214); } /* #6BAED6 */
-.load-5-10 { fill:rgb(66,146,198); }  /* #4292C6 */
-.load-6-10 { fill:rgb(33,113,181); }  /* #2171B5 */
-.load-7-10 { fill:rgb(8,81,156); }    /* #08519C */
-.load-8-10 { fill:rgb(8,48,107); }    /* #08306B */
-.load-9-10 { fill:rgb(8,8,107); }     /* #080864 */
+.svg_station { stroke-width: 1px; opacity: 0.8}
+.load-0-10 { stroke:rgb(247,251,255); } /* #F7FBFF */
+.load-1-10 { stroke:rgb(222,235,247); } /* #DEEBF7 */
+.load-2-10 { stroke:rgb(198,219,239); } /* #C6DBEF */
+.load-3-10 { stroke:rgb(158,202,225); } /* #9ECAE1 */
+.load-4-10 { stroke:rgb(107,174,214); } /* #6BAED6 */
+.load-5-10 { stroke:rgb(66,146,198); }  /* #4292C6 */
+.load-6-10 { stroke:rgb(33,113,181); }  /* #2171B5 */
+.load-7-10 { stroke:rgb(8,81,156); }    /* #08519C */
+.load-8-10 { stroke:rgb(8,48,107); }    /* #08306B */
+.load-9-10 { stroke:rgb(8,8,107); }     /* #080864 */
 
 .cont-0-10 { fill:rgb(247,251,255); } /* #F7FBFF */
 .cont-1-10 { fill:rgb(222,235,247); } /* #DEEBF7 */
@@ -160,18 +163,6 @@ body, div, svg {
 .cont-7-10 { fill:rgb(8,81,156); }    /* #08519C */
 .cont-8-10 { fill:rgb(8,48,107); }    /* #08306B */
 .cont-9-10 { fill:rgb(8,8,107); }     /* #080864 */
-
-.legend {
-  position: absolute;  
-}
-
-#cont_legend {
-  left: 30%;
-}
-
-#load_legend {
-  left: 60%;
-}
 
 .geostats-legend div {
   margin-bottom:5px;
