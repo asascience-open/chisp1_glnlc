@@ -259,12 +259,12 @@
 
       var loads_legend = new geostats(loads);
       loads_legend.getQuantile(d3.min([loads.length, 10]));
-      var load_colors = ["#F7FBFF","#DEEBF7","#C6DBEF","#9ECAE1","#6BAED6","#4292C6","#2171B5","#08519C","#08306B","#080864"]
+      var load_colors = ["#FFFFCC","#FFEDA0","#FED976","#FEB24C","#FD8D3C","#FC4E2A","#E31A1C","#BD0026","#800026","#662506"]
       load_colors = load_colors.slice(0, d3.min([loads.length, 10]));
 
       var conts_legend = new geostats(d3.range(0,1.1,0.1));
       conts_legend.getQuantile(10);
-      var cont_colors = ["#F7FBFF","#DEEBF7","#C6DBEF","#9ECAE1","#6BAED6","#4292C6","#2171B5","#08519C","#08306B","#080864"]
+      var cont_colors = ["#FFFFCC","#FFEDA0","#FED976","#FEB24C","#FD8D3C","#FC4E2A","#E31A1C","#BD0026","#800026","#662506"]
 
       $("#load_legend").css("padding","5px").css("background-color","rgba(221,221,221,0.6)").html(loads_legend.getHtmlLegend(load_colors, 'Load (outline)', null, function(c) { return Math.round(c); }));
       $("#cont_legend").css("padding","5px").css("background-color","rgba(221,221,221,0.6)").html(conts_legend.getHtmlLegend(cont_colors, 'Contribution (fill)', null, function(c) { return (c * 100).toString() + "%"; }));

@@ -142,27 +142,27 @@ body, div, svg {
 }
 
 .svg_station { stroke-width: 1px; opacity: 0.8}
-.load-0-10 { stroke:rgb(247,251,255); } /* #F7FBFF */
-.load-1-10 { stroke:rgb(222,235,247); } /* #DEEBF7 */
-.load-2-10 { stroke:rgb(198,219,239); } /* #C6DBEF */
-.load-3-10 { stroke:rgb(158,202,225); } /* #9ECAE1 */
-.load-4-10 { stroke:rgb(107,174,214); } /* #6BAED6 */
-.load-5-10 { stroke:rgb(66,146,198); }  /* #4292C6 */
-.load-6-10 { stroke:rgb(33,113,181); }  /* #2171B5 */
-.load-7-10 { stroke:rgb(8,81,156); }    /* #08519C */
-.load-8-10 { stroke:rgb(8,48,107); }    /* #08306B */
-.load-9-10 { stroke:rgb(8,8,107); }     /* #080864 */
+.load-0-10 { stroke:rgb(255, 255, 204); } /* #FFFFCC */
+.load-1-10 { stroke:rgb(255, 237, 160); } /* #FFEDA0 */
+.load-2-10 { stroke:rgb(254, 217, 118); } /* #FED976 */
+.load-3-10 { stroke:rgb(254, 178,  76); } /* #FEB24C */
+.load-4-10 { stroke:rgb(253, 141,  60); } /* #FD8D3C */
+.load-5-10 { stroke:rgb(252,  78,  42); } /* #FC4E2A */
+.load-6-10 { stroke:rgb(227,  26,  28); } /* #E31A1C */
+.load-7-10 { stroke:rgb(189,   0,  38); } /* #BD0026 */
+.load-8-10 { stroke:rgb(128,   0,  38); } /* #800026 */
+.load-9-10 { stroke:rgb(102,  37,   6); } /* #662506 */
 
-.cont-0-10 { fill:rgb(247,251,255); } /* #F7FBFF */
-.cont-1-10 { fill:rgb(222,235,247); } /* #DEEBF7 */
-.cont-2-10 { fill:rgb(198,219,239); } /* #C6DBEF */
-.cont-3-10 { fill:rgb(158,202,225); } /* #9ECAE1 */
-.cont-4-10 { fill:rgb(107,174,214); } /* #6BAED6 */
-.cont-5-10 { fill:rgb(66,146,198); }  /* #4292C6 */
-.cont-6-10 { fill:rgb(33,113,181); }  /* #2171B5 */
-.cont-7-10 { fill:rgb(8,81,156); }    /* #08519C */
-.cont-8-10 { fill:rgb(8,48,107); }    /* #08306B */
-.cont-9-10 { fill:rgb(8,8,107); }     /* #080864 */
+.cont-0-10 { fill:rgb(255, 255, 204); } /* #FFFFCC */
+.cont-1-10 { fill:rgb(255, 237, 160); } /* #FFEDA0 */
+.cont-2-10 { fill:rgb(254, 217, 118); } /* #FED976 */
+.cont-3-10 { fill:rgb(254, 178,  76); } /* #FEB24C */
+.cont-4-10 { fill:rgb(253, 141,  60); } /* #FD8D3C */
+.cont-5-10 { fill:rgb(252,  78,  42); } /* #FC4E2A */
+.cont-6-10 { fill:rgb(227,  26,  28); } /* #E31A1C */
+.cont-7-10 { fill:rgb(189,   0,  38); } /* #BD0026 */
+.cont-8-10 { fill:rgb(128,   0,  38); } /* #800026 */
+.cont-9-10 { fill:rgb(102,  37,   6); } /* #662506 */
 
 .geostats-legend div {
   margin-bottom:5px;
