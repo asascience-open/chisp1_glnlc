@@ -142,11 +142,13 @@
       $("#status").css("top", ($(window).height() / 2) + $(".spinner").height() - 140);
       $("#timer").css("top", ($(window).height() / 2) + $(".spinner").height() - 135);
 
+      $('#timer').css("display", "block");
+      currentTime = 0;
       timer.play();
 
       $('html, body').animate({ 
         scrollTop: $("#spinner").offset().top },
-        1000, 
+        1000,
         "swing"
       );
     }
