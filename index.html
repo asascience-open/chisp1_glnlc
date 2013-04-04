@@ -9,6 +9,7 @@
   <script type="text/javascript" src="http://code.jquery.com/ui/1.8.24/jquery-ui.js"></script>
   <script type="text/javascript" src="http://d3js.org/d3.v3.js"></script>
   <script type="text/javascript" src="jquery.svg.min.js"></script>
+  <script type="text/javascript" src="jquery.timer.js"></script>
   <script type="text/javascript" src="spin.min.js"></script>
   <script type="text/javascript" src="geostats.js"></script>
 </head>
@@ -55,7 +56,8 @@
   </div>
 
   <div id="spinner" class="row">
-    <span class="status">Started</span>
+    <div id="status">Started</div>
+    <div id="timer"></div>
   </div>
   <div id="results" class="row"></div>
 
@@ -76,6 +78,10 @@
     var send_date = "";
     var send_duration = "";
     var spinner = null;
+
+    var timer = null;
+    var currentTime = 0;
+    var incrementTime = 100;
 
     var projection = d3.geo.albers()
         .scale(1200)
@@ -132,10 +138,11 @@
       $('#spinner').css("margin-top", $(window).height());
       $('#spinner').css("display", "block");
 
-
-
       $(".spinner").css("top", ($(window).height() / 2) + $(".spinner").height());
-      $(".status").css("top", ($(window).height() / 2) + $(".spinner").height() - 120);
+      $("#status").css("top", ($(window).height() / 2) + $(".spinner").height() - 140);
+      $("#timer").css("top", ($(window).height() / 2) + $(".spinner").height() - 135);
+
+      timer.play();
 
       $('html, body').animate({ 
         scrollTop: $("#spinner").offset().top },
@@ -144,7 +151,7 @@
       );
     }
 
-    function drawResults(total_load, load_json) {
+    function drawResults(total_load, load_json, statusLocation) {
 
       var width = $(window).width();
       var height = $(window).height();
@@ -201,9 +208,10 @@
         .css("text-align", "left")
         .css("padding","5px")
         .css("background-color","rgba(221,221,221,0.6)")
-        .append($("<span />").css("font-size", "20px").css("text-decoration","underline").html(send_nutrient + " in Lake " + click_lake + " during " + $("#duration option:selected").html()))        
-        .append($("<br />"))
-        .append($("<span />").css("font-size", "18px").html("Total Load: " + total_load));
+        .append($("<spadivn />").css("font-size", "20px").css("text-decoration","underline").html(send_nutrient + " in Lake " + click_lake + " during " + $("#duration option:selected").html()))
+        .append($("<div />").css("font-size", "18px").html("Model Run Time: " + formatTime(currentTime)))
+        .append($("<div />").css("font-size", "18px").html("Total Load: " + total_load))
+        .append($("<div />").css("font-size", "18px").html("<a href='" + statusLocation + "'>Download Results</a>"));
 
       var svg = d3.select("#results").append("svg")
         .attr("width", width)
@@ -317,7 +325,7 @@
       if (text != "") {
         text = text + "...";
       }
-      $(".status").html(text);
+      $("#status").html(text);
     }
 
     function checkReady() {
@@ -366,8 +374,10 @@
             updateStatus($(doc).find("Status").text());
             var lakexml = $(doc).find("ComplexData").find("Lake");
             spinner.stop();
-            parseResults(lakexml);
-          }, 1000);
+            timer.stop();
+            $("#timer").css("display","none");
+            parseResults(lakexml, statusLocation);
+          }, 5000);
         } else {
           setTimeout(function() {
             $.ajax({
@@ -378,14 +388,21 @@
               timeout: 9000,
               success: function(s) {
                 var stat_doc = $.parseXML(s.data);
-                $(".status").html($(stat_doc).find("Status").text());
+                updateStatus($(stat_doc).find("Status").text());
 
                 var lakexml = $(stat_doc).find("ComplexData").find("Lake");
                 if (lakexml.length == 0) {
                   // No results yet, try again.
                   poll();
+                } else if (lakexml.find("River").length == 0) {
+                  spinner.stop()
+                  timer.stop();
+                  updateStatus("Nutrient load cannot be calculated (No results were returned).");
                 } else {
-                  parseResults(lakexml);
+                  spinner.stop();
+                  timer.stop();
+                  $("#timer").css("display", "none");
+                  parseResults(lakexml, statusLocation);
                 }
               },
               error:function(x, t, m) {
@@ -395,11 +412,8 @@
                 } else {
                   updateStatus("Failure in model, please try again");
                   spinner.stop();
+                  timer.stop();
                 }
-              },
-              complete:function() {
-                spinner.stop();
-                updateStatus("");
               }
             });
           }, 10000);
@@ -407,7 +421,7 @@
       })();
     }
 
-    function parseResults(load_xml) {
+    function parseResults(load_xml, statusLocation) {
 
       updateStatus("");
 
@@ -435,7 +449,19 @@
       });
 
       // Make the results visible and zoom to it.
-      drawResults(total_load, load_json);
+      drawResults(total_load, load_json, statusLocation);
+    }
+
+    function pad(number, length) {
+      var str = '' + number;
+      while (str.length < length) {str = '0' + str;}
+      return str;
+    }
+    function formatTime(time) {
+      var min = parseInt(time / 6000),
+          sec = parseInt(time / 100) - (min * 60),
+          hundredths = pad(time - (sec * 100) - (min * 6000), 2);
+      return (min > 0 ? pad(min, 2) : "00") + ":" + pad(sec, 2) + ":" + hundredths;
     }
 
     $(document).ready(function () {
@@ -474,8 +500,10 @@
       });
 
       $( "#duration" ).change(function(e) {
-        send_duration = $("#duration").val();
-        selected($("#duration option:selected").html(), $("#third"));
+        if ($("#duration option:selected").html() != "") {
+          send_duration = $("#duration").val();
+          selected($("#duration option:selected").html(), $("#third"));
+        }
       });
 
       $( "#datepicker" ).datepicker({
@@ -499,7 +527,13 @@
         send_nutrient = $(this).attr('name');
         selected(send_nutrient, $("#second"));
       });
-     
+      
+      timer = $.timer(function() {
+        $("#timer").html(formatTime(currentTime));
+        currentTime += incrementTime / 10;
+      });
+      timer.set({ time: 100, autostart: false });
+
     });
   </script>
 </body>
