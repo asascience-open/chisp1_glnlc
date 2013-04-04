@@ -212,7 +212,7 @@
         .css("background-color","rgba(221,221,221,0.6)")
         .append($("<spadivn />").css("font-size", "20px").css("text-decoration","underline").html(send_nutrient + " in Lake " + click_lake + " during " + $("#duration option:selected").html()))
         .append($("<div />").css("font-size", "18px").html("Model Run Time: " + formatTime(currentTime)))
-        .append($("<div />").css("font-size", "18px").html("Total Load: " + total_load))
+        .append($("<div />").css("font-size", "18px").html("Total Load (kg): " + total_load))
         .append($("<div />").css("font-size", "18px").html("<a href='" + statusLocation + "'>Download Results</a>"));
 
       var svg = d3.select("#results").append("svg")
@@ -276,7 +276,7 @@
       conts_legend.getQuantile(10);
       var cont_colors = ["#FFFFCC","#FFEDA0","#FED976","#FEB24C","#FD8D3C","#FC4E2A","#E31A1C","#BD0026","#800026","#662506"]
 
-      $("#load_legend").css("padding","5px").css("background-color","rgba(221,221,221,0.6)").html(loads_legend.getHtmlLegend(load_colors, 'Load (outline)', null, function(c) { return Math.round(c); }));
+      $("#load_legend").css("padding","5px").css("background-color","rgba(221,221,221,0.6)").html(loads_legend.getHtmlLegend(load_colors, 'Load in kg (outline)', null, function(c) { return Math.round(c); }));
       $("#cont_legend").css("padding","5px").css("background-color","rgba(221,221,221,0.6)").html(conts_legend.getHtmlLegend(cont_colors, 'Contribution (fill)', null, function(c) { return (c * 100).toString() + "%"; }));
 
       stations.selectAll("path")
