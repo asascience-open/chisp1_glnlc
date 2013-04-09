@@ -19,23 +19,26 @@ body, div, svg {
   pointer-events: all;
 }
 
-.lakes {
-  fill: #aaa;
+.small_lakes {
+  fill: #aaa;;
+}
+
+.big_lakes {
+  fill: #99CCCC;
 }
 
 .rivers {
   fill: none;
-  stroke-width: 0.2px;
-  stroke: #aaa;
+  stroke-width: 0.15px;
+  stroke: #99CCCC;
 }
 
-.small_lakes {
-  stroke: #fff;
-  stroke-width: 1.5px;
-}
- 
-.lakes .active {
+.small_lakes .active {
   fill: steelblue;
+}
+
+.legend_circles {
+  font-size: 12px;
 }
 
 #container {
@@ -144,19 +147,20 @@ body, div, svg {
   margin: 0px auto 0px auto;
   text-align: center;
   display: none;
+  background-color: #CCFF99;
 }
 
-.svg_station { stroke-width: 1px; opacity: 0.8}
-.load-0-10 { stroke:rgb(255, 255, 204); } /* #FFFFCC */
-.load-1-10 { stroke:rgb(255, 237, 160); } /* #FFEDA0 */
-.load-2-10 { stroke:rgb(254, 217, 118); } /* #FED976 */
-.load-3-10 { stroke:rgb(254, 178,  76); } /* #FEB24C */
-.load-4-10 { stroke:rgb(253, 141,  60); } /* #FD8D3C */
-.load-5-10 { stroke:rgb(252,  78,  42); } /* #FC4E2A */
-.load-6-10 { stroke:rgb(227,  26,  28); } /* #E31A1C */
-.load-7-10 { stroke:rgb(189,   0,  38); } /* #BD0026 */
-.load-8-10 { stroke:rgb(128,   0,  38); } /* #800026 */
-.load-9-10 { stroke:rgb(102,  37,   6); } /* #662506 */
+.svg_station { stroke-width: 0px; opacity: 0.8}
+.load-0-10 { fill:rgb(255, 255, 204); } /* #FFFFCC */
+.load-1-10 { fill:rgb(255, 237, 160); } /* #FFEDA0 */
+.load-2-10 { fill:rgb(254, 217, 118); } /* #FED976 */
+.load-3-10 { fill:rgb(254, 178,  76); } /* #FEB24C */
+.load-4-10 { fill:rgb(253, 141,  60); } /* #FD8D3C */
+.load-5-10 { fill:rgb(252,  78,  42); } /* #FC4E2A */
+.load-6-10 { fill:rgb(227,  26,  28); } /* #E31A1C */
+.load-7-10 { fill:rgb(189,   0,  38); } /* #BD0026 */
+.load-8-10 { fill:rgb(128,   0,  38); } /* #800026 */
+.load-9-10 { fill:rgb(102,  37,   6); } /* #662506 */
 
 .cont-0-10 { fill:rgb(255, 255, 204); } /* #FFFFCC */
 .cont-1-10 { fill:rgb(255, 237, 160); } /* #FFEDA0 */
@@ -171,12 +175,13 @@ body, div, svg {
 
 .geostats-legend div {
   margin-bottom:5px;
-  font-size: 16px;
+  font-size: 12px;
 }
 
 .geostats-legend-title {
   font-weight: bold;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
+  font-size: 12px;
 }
 
 .geostats-legend-block {

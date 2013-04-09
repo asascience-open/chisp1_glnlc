@@ -82,12 +82,20 @@
     var timer = null;
     var currentTime = 0;
     var incrementTime = 100;
+    
+    var size_scale;
 
     var projection = d3.geo.albers()
         .scale(1200)
         .translate([-210,170]);
      
-    var path = d3.geo.path().projection(projection).pointRadius(1.5);
+    var path = d3.geo.path().projection(projection).pointRadius(function(e,i) {
+      try {
+        return size_scale(e.properties.load);
+      } catch(e) {
+        return 1.2;
+      }
+    });
      
     var svg = d3.select("#first .center").append("svg")
         .attr("width", width)
@@ -102,7 +110,7 @@
     var g = svg.append("g")
         .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")")
       .append("g")
-        .attr("class", "small_lakes lakes");
+        .attr("class", "small_lakes");
      
     d3.json("gljs.json", function(json) {
       g.selectAll("path")
@@ -177,7 +185,7 @@
         scale += 6;
       }
 
-      $('#results').html("");
+      $('#results').text("");
       $('#results').css("display", "block");
       $('#spinner').css("margin-top", $(window).height());
 
@@ -190,19 +198,16 @@
         .append($("<div />")
           .attr("id", "final_load")
           .css("float", "left")
-          .css("width", "500px")
           .css("text-align", "center")
           .css("margin", "0 auto"))
 
         .append($("<div />")
-          .attr("id", "cont_legend")
-          .css("float", "right")
-          .css("width", "200px"))
+          .attr("id", "load_legend")
+          .css("float", "right"))
 
         .append($("<div />")
-          .attr("id", "load_legend")
-          .css("float", "right")
-          .css("width", "200px"))
+          .attr("id", "cont_legend")
+          .css("float", "right"))
 
         );
 
@@ -210,10 +215,10 @@
         .css("text-align", "left")
         .css("padding","5px")
         .css("background-color","rgba(221,221,221,0.6)")
-        .append($("<spadivn />").css("font-size", "20px").css("text-decoration","underline").html(send_nutrient + " in Lake " + click_lake + " during " + $("#duration option:selected").html()))
-        .append($("<div />").css("font-size", "18px").html("Model Run Time: " + formatTime(currentTime)))
-        .append($("<div />").css("font-size", "18px").html("Total Load (kg): " + total_load))
-        .append($("<div />").css("font-size", "18px").html("<a href='" + statusLocation + "'>Download Results</a>"));
+        .append($("<div />").css("font-size", "20px").css("text-decoration","underline").text(send_nutrient + " in Lake " + click_lake + " during " + $("#duration option:selected").html()))
+        .append($("<div />").css("font-size", "18px").text("Model Run Time: " + formatTime(currentTime)))
+        .append($("<div />").css("font-size", "18px").text("Total Load (kg): " + total_load))
+        .append($("<div />").css("font-size", "18px").append("<a href='" + statusLocation + "'>Download Results</a>"));
 
       var svg = d3.select("#results").append("svg")
         .attr("width", width)
@@ -229,7 +234,7 @@
       var g = svg.append("g")
           .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")")
 
-      var lakes = g.append("g").attr("class", "lakes");
+      var lakes = g.append("g").attr("class", "big_lakes");
       var rivers = g.append("g").attr("class", "rivers");
       var stations = g.append("g").attr("class", "stations");
 
@@ -248,36 +253,71 @@
           .append("path")
             .attr("d", path);
       });
-/*
-        rivers.selectAll("path")
-          .data(json.features)
-        .enter()
-          .append("path")
-            .attr("d", path);
-      });
-*/
-      loads = jQuery.unique(load_json.features.map(function(n) { return n.properties.load }));
+
+      loads = load_json.features.map(function(n) { return n.properties.load });
       conts = load_json.features.map(function(n) { return n.properties.contribution });
 
-      var load_scale = d3.scale.quantile()
-                        .domain(loads)
-                        .range(d3.range( d3.min([loads.length, 10]) ).map(function(i) { return "load-" + i + "-10"; }));
+      max_load = d3.max(loads);
+
+      size_scale = d3.scale.quantize()
+                        .domain([0,max_load])
+                        .range(d3.range(0.5,2.5,0.2))
+
+      var load_scale = d3.scale.quantize()
+                        .domain([0,max_load])
+                        .range(d3.range(10).map(function(i) { return "load-" + i + "-10"; }))
 
       var cont_scale = d3.scale.quantile()
                         .domain(d3.range(0,1,0.1))
                         .range(d3.range(10).map(function(i) { return "cont-" + i + "-10"; }));
 
       var loads_legend = new geostats(loads);
-      loads_legend.getQuantile(d3.min([loads.length, 10]));
-      var load_colors = ["#FFFFCC","#FFEDA0","#FED976","#FEB24C","#FD8D3C","#FC4E2A","#E31A1C","#BD0026","#800026","#662506"]
-      load_colors = load_colors.slice(0, d3.min([loads.length, 10]));
+      loads_legend.getEqInterval(10);
+      //var load_colors = ["#FFFFCC","#FFEDA0","#FED976","#FEB24C","#FD8D3C","#FC4E2A","#E31A1C","#BD0026","#800026","#662506"]
+      //load_colors = load_colors.slice(0, d3.min([loads.length, 10]));
 
       var conts_legend = new geostats(d3.range(0,1.1,0.1));
       conts_legend.getQuantile(10);
-      var cont_colors = ["#FFFFCC","#FFEDA0","#FED976","#FEB24C","#FD8D3C","#FC4E2A","#E31A1C","#BD0026","#800026","#662506"]
+      var cont_colors = ["#FFFFCC","#FFEDA0","#FED976","#FEB24C","#FD8D3C","#FC4E2A","#E31A1C","#BD0026","#800026","#662506"];
 
-      $("#load_legend").css("padding","5px").css("background-color","rgba(221,221,221,0.6)").html(loads_legend.getHtmlLegend(load_colors, 'Load in kg (outline)', null, function(c) { return Math.round(c); }));
-      $("#cont_legend").css("padding","5px").css("background-color","rgba(221,221,221,0.6)").html(conts_legend.getHtmlLegend(cont_colors, 'Contribution (fill)', null, function(c) { return (c * 100).toString() + "%"; }));
+      // Draw a circle for every load radius and add it to legend
+      $("#load_legend").css("padding","5px").css("background-color","rgba(221,221,221,0.6)");
+
+      // This is calculated by taking the radius of circles on map and dividing by their range value
+
+      $("#load_legend").append("<div class='geostats-legend-title'>Load (kg)</div>");
+
+      var legend_svg = d3.select("#load_legend").append("svg")
+        .attr("width", 240)
+        .attr("height", 450);
+
+      var g_circles = legend_svg.append("g").attr("class", "legend_circles");
+
+      var radius_factor = 13;
+      var total_height = 0;
+      for (var i = 1 ; i < 11 ; i++) {
+        var leg = loads_legend.ranges[i-1].split("-")
+        var text = parseFloat(leg[0]).toFixed(5) + " - " + parseFloat(leg[1]).toFixed(5)
+        var radius = radius_factor * size_scale.range()[i-1];
+        var circle_height = radius * 2 + 5;
+        total_height += circle_height;
+        g_circles
+          .append("circle")
+            .attr("cx", 50)
+            .attr("cy", total_height)
+            .attr("r" , radius)
+            .attr("stoke","#000")
+            .attr("fill","#000")
+            .attr("stokeWidth", 1);
+
+        g_circles
+          .append("text")
+            .attr("x", 95)
+            .attr("y", total_height)
+            .text(text);
+      }
+
+      $("#cont_legend").css("padding","5px").css("background-color","rgba(221,221,221,0.6)").html(conts_legend.getHtmlLegend(cont_colors, 'Contribution', null, function(c) { return (c * 100).toString() + "%"; }));
 
       stations.selectAll("path")
             .data(load_json.features)
@@ -313,21 +353,22 @@
     }
 
     function selected(name, d) {
-      d.find(".right").html(name);
+      d.find(".right").text(name);
       d.find(".right").css("background-color", "#99ff66");
       checkReady();
     }
     function unselected(d) {
-      d.find(".right").html("");
+      d.find(".right").text("");
       d.find(".right").css("background-color", "#ffffff");
       checkReady();
     }
 
     function updateStatus(text) {
+
       if (text != "") {
         text = text + "...";
       }
-      $("#status").html(text);
+      $("#status").text(text);
     }
 
     function checkReady() {
@@ -363,23 +404,33 @@
           .attr("transform", "scale(" + k + ")translate(" + click_x + "," + click_y + ")");
     }
 
+    function getNamespaceElement(doc, ns, element) {
+      var nd = doc.find(element);
+      if (nd.length == 0) {
+        nd = doc.find(ns + "\\:" + element);
+      }
+      return nd;
+    }
+
     function parseExecute(x) {
       var exec_doc = $.parseXML(x.data);
-      var statusLocation = $(exec_doc).find("ExecuteResponse").attr("statusLocation");
-      updateStatus($(exec_doc).find("Status").text());
+      $exec_doc = $( exec_doc );
+      var statusLocation = getNamespaceElement($exec_doc, "wps", "ExecuteResponse").attr("statusLocation");
+      updateStatus(getNamespaceElement($exec_doc, "wps", "Status").text());
 
       (function poll() {
         if (dev == true) {
           setTimeout(function() {
-            var s = { data: '<?xml version="1.0" encoding="UTF-8"?> <wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" service="WPS" version="1.0.0" statusLocation="http://64.72.74.103:8080/outputs/3c31262d-6c90-4849-b545-b8939ab80758.xml"> <wps:Process processVersion="1.0"> <ows:Identifier>calc_nutrient_load</ows:Identifier> <ows:Title>Nutrient load calculation service for the Great Lakes</ows:Title> <ows:Abstract>WPS for CHISP1 Scenario #2 that calculates the nutrient loading of the Great Lakes by each tributary</ows:Abstract> </wps:Process> <wps:Status creationTime="2013-03-26 09:23:53.434805"> Process (calc_nutrient_load) has Succeeded at 2013-03-26 09:24:34.947121 </wps:Status> <wps:ProcessOutputs> <wps:Output> <ows:Identifier>nlcs_output</ows:Identifier> <ows:Title>Great Lakes Nutrient Load Calculation Output</ows:Title> <wps:Data> <wps:ComplexData mimeType="text/xml"> <Lake name="ontario" load="92924.1533979"> <Rivers> <River name="My Test Tributary" lat="44" lon="-75" load="51462.0766989" contribution="0.5" /> <River name="My Test Tributary" lat="44" lon="-75.6" load="41462.0766989" contribution="0.5" /> </Rivers> </Lake> </wps:ComplexData> </wps:Data> </wps:Output> </wps:ProcessOutputs> </wps:ExecuteResponse>'}
-            var doc = $.parseXML(s.data);
-            updateStatus($(doc).find("Status").text());
-            var lakexml = $(doc).find("ComplexData").find("Lake");
+            var s = { data: '<?xml version="1.0" encoding="UTF-8"?> <wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" service="WPS" version="1.0.0" statusLocation="http://64.72.74.103:8080/outputs/d88fa173-9c89-47a2-9b2f-10fcd5628cfc.xml"> <wps:Process processVersion="1.0"> <ows:Identifier>calc_nutrient_load</ows:Identifier> <ows:Title>Nutrient load calculation service for the Great Lakes</ows:Title> <ows:Abstract>WPS for CHISP1 Scenario #2 that calculates the nutrient loading of the Great Lakes by each tributary</ows:Abstract> </wps:Process> <wps:Status creationTime="2013-04-04 12:55:10.098809"> Process (calc_nutrient_load) has Succeeded at 2013-04-04 13:28:55.707258 </wps:Status> <wps:ProcessOutputs> <wps:Output> <ows:Identifier>nlcs_output</ows:Identifier> <ows:Title>Great Lakes Nutrient Load Calculation Output</ows:Title> <wps:Data> <wps:ComplexData mimeType="text/xml"> <!--Start Dummy Data--> <!--<Lake name="Ontario" load="500"> <Rivers> <River name="My Test Tributary" lat="41" lon="74" load="300" contribution="60%" /> </Rivers> </Lake>--> <!--End Dummy Data--> <Lake name="ontario" load="40.5213869641"> <Rivers> <River name="Baxter Creek" lat="44.15028" lon="-78.44671631" load="0.000345029981375" contribution="8.51476238166e-06" /> <River name="Beaver Creek" lat="44.53519058" lon="-77.69657898" load="0.00403185998344" contribution="9.94995553093e-05" /> <River name="Black Creek" lat="42.94499969" lon="-79.04222107" load="0.000374789986253" contribution="9.24918948566e-06" /> <River name="Black River (Ontario US)" lat="43.98555556" lon="-75.9247222" load="4.07235873016" contribution="0.100498996586" /> <River name="Blackstock Creek" lat="44.13191986" lon="-78.82897186" load="0.000249332991153" contribution="6.15312085378e-06" /> <River name="Bloomfield Creek" lat="43.99055862" lon="-77.21833038" load="0.00019182800442" contribution="4.73399404097e-06" /> <River name="Bowmanville Creek" lat="43.92147064" lon="-78.70200348" load="0.00376463998699" contribution="9.29050131064e-05" /> <River name="Bronte Creek" lat="43.43688965" lon="-79.86432648" load="0.00542004004169" contribution="0.00013375751542" /> <River name="Burnley Creek" lat="44.19681168" lon="-77.91100311" load="0.00103850002587" contribution="2.56284422542e-05" /> <River name="Burnt River" lat="44.70986176" lon="-78.67752838" load="0.00401760018921" contribution="9.91476474575e-05" /> <River name="Centreville Creek" lat="43.92443848" lon="-79.83444214" load="0.000164920000702" contribution="4.06994955153e-06" /> <River name="Cobourg Brook" lat="43.96493912" lon="-78.18505859" load="0.000617209980488" contribution="1.52317091474e-05" /> <River name="Cold Creek" lat="44.13478088" lon="-77.78688812" load="0.00130199997783" contribution="3.2131179986e-05" /> <River name="Collins Creek" lat="44.25650024" lon="-76.61255646" load="0.00538252988529" contribution="0.00013283182755" /> <River name="Credit River" lat="43.58227921" lon="-79.70874786" load="0.015233400269" contribution="0.000375934818878" /> <River name="Credit River (Erin Branch)" lat="43.77180862" lon="-80.09364319" load="0.000405107997805" contribution="9.9973872603e-06" /> <River name="Credit River West Branch" lat="43.64656067" lon="-79.8662796" load="0.0017394719553" contribution="4.29272560892e-05" /> <River name="Crowe River" lat="44.48155975" lon="-77.68480682" load="0.00703700023651" contribution="0.000173661386338" /> <River name="Demorestville Creek" lat="44.09056091" lon="-77.21056366" load="1.38880004287e-05" contribution="3.42732602933e-07" /> <River name="Don River" lat="43.68585968" lon="-79.3615036" load="0.00466488004494" contribution="0.000115121430791" /> <River name="Duffins Creek" lat="43.85277939" lon="-79.06221771" load="0.00058125" contribution="1.43442770238e-05" /> <River name="Humber River" lat="43.69894028" lon="-79.52039337" load="0.00288299991131" contribution="7.11476118491e-05" /> <River name="Sixteen Mile Creek" lat="43.4991684" lon="-79.77677917" load="6.20000009239e-05" contribution="1.53005623867e-06" /> <River name="Etobicoke Creek" lat="43.60174942" lon="-79.55632782" load="0.000235599997044" contribution="5.81421354734e-06" /> <River name="Farewell Creek" lat="43.88832855" lon="-78.82111359" load="0.000637794020355" contribution="1.57396887949e-05" /> <River name="Four Mile Creek" lat="43.19561005" lon="-79.11332703" load="0.0013331550248" contribution="3.29000343936e-05" /> <River name="Fourteen Mile Creek" lat="43.42145157" lon="-79.70314789" load="0.000634259989634" contribution="1.56524748325e-05" /> <River name="Ganaraska River" lat="43.96833038" lon="-78.29528046" load="0.000421600004435" contribution="1.04043823773e-05" /> <River name="Genessee River" lat="43.1417222" lon="-77.6163056" load="20.8067959024" contribution="0.513476893593" /> <River name="Grindstone Creek" lat="43.30064011" lon="-79.8690033" load="0.00493674991593" contribution="0.000121830724114" /> <River name="Gull River" lat="44.7318306" lon="-78.81806183" load="0.00796079962158" contribution="0.000196459208779" /> <River name="Indian River" lat="44.54047012" lon="-78.0953598" load="0.00131687994146" contribution="3.24983925804e-05" /> <River name="Jackson Creek" lat="44.30982971" lon="-78.37071991" load="0.000369024008751" contribution="9.1068948128e-06" /> <River name="Lynde Creek" lat="43.87549973" lon="-78.96032715" load="0.000645605999231" contribution="1.59324753569e-05" /> <River name="Mariposa Brook" lat="44.28963852" lon="-78.84161377" load="0.000474299991131" contribution="1.17049298325e-05" /> <River name="Mayhew Creek" lat="44.10916901" lon="-77.61253357" load="0.000488807992816" contribution="1.20629630286e-05" /> <River name="Michell Creek" lat="43.96110916" lon="-79.12805939" load="0.000257144991972" contribution="6.34590795718e-06" /> <River name="Millhaven Creek" lat="44.22642136" lon="-76.75906372" load="0.000542190011382" contribution="1.33803418886e-05" /> <River name="Mimico Creek" lat="43.64736176" lon="-79.51969147" load="0.000598919986613" contribution="1.47803427149e-05" /> <River name="Mississagua River" lat="44.67499924" lon="-78.34583282" load="0.00050375" contribution="1.24317067539e-05" /> <River name="Moira River" lat="44.25366974" lon="-77.41918945" load="0.0273234012299" contribution="0.000674295804683" /> <River name="Mountsberg Creek" lat="43.45483017" lon="-80.04582977" load="0.000453096020222" contribution="1.11816513246e-05" /> <River name="Napanee River" lat="44.27750015" lon="-76.92861176" load="0.00157573003459" contribution="3.88863795799e-05" /> <River name="Nonquon River" lat="44.086689" lon="-79.00608063" load="0.000200880007982" contribution="4.9573823364e-06" /> <River name="Oshawa Creek" lat="43.9303093" lon="-78.8915329" load="0.000435704989135" contribution="1.07524697889e-05" /> <River name="Oswegatchie River" lat="44.5994444" lon="-75.37888889" load="0.4975" contribution="0.012277467216" /> <River name="Oswego River" lat="43.45166667" lon="-76.50527778" load="12.3625" contribution="0.305085805946" /> <River name="Otonabee River" lat="44.42224884" lon="-78.27574921" load="0.010416" contribution="0.000257049444266" /> <River name="Ouse River" lat="44.29806137" lon="-78.04493713" load="0.000617209980488" contribution="1.52317091474e-05" /> <River name="Pigeon River" lat="44.12427902" lon="-78.69510651" load="0.000115661000192" contribution="2.85431987544e-06" /> <River name="Raquette River" lat="44.83888889" lon="-74.97888889" load="2.0088" contribution="0.0495738213941" /> <River name="Redhill Creek" lat="43.24097061" lon="-79.77388763" load="0.000609057003692" contribution="1.50305073277e-05" /> <River name="Salmon River" lat="44.20730972" lon="-77.2092514" load="0.00776550035477" contribution="0.000191639549792" /> <River name="Salt Creek" lat="44.1995697" lon="-77.81894684" load="0.000765699971914" contribution="1.88961935728e-05" /> <River name="Skootamatta River" lat="44.54957962" lon="-77.32805634" load="0.0027125" contribution="6.69399594442e-05" /> <River name="Spencer Creek" lat="43.26541901" lon="-79.96427917" load="0.000764088011146" contribution="1.88564130794e-05" /> <River name="Stoney Creek" lat="43.22552872" lon="-79.7511673" load="1.33920006361e-05" contribution="3.30492158325e-07" /> <River name="Trent River" lat="44.17388916" lon="-77.58917236" load="0.072726" contribution="0.00179475594121" /> <River name="Twelve Mile Creek" lat="43.11478043" lon="-79.27455902" load="0.0006345699898" contribution="1.56601251177e-05" /> <River name="Twenty Mile Creek" lat="43.13346863" lon="-79.38324738" load="0.00107160802829" contribution="2.64454923333e-05" /> <River name="Welland River" lat="42.95000076" lon="-79.21666718" load="0.563859" contribution="0.0139150962552" /> <River name="Wilmot Creek" lat="43.93022156" lon="-78.61881256" load="9.89519972801e-05" contribution="2.4419696534e-06" /> <River name="Wilton Creek" lat="44.23931122" lon="-76.84953308" load="0.000397419983149" contribution="9.80765992784e-06" /> </Rivers> </Lake> </wps:ComplexData> </wps:Data> </wps:Output> </wps:ProcessOutputs> </wps:ExecuteResponse>'}
+            var xmldoc = $.parseXML(s.data);
+            $doc = $( xmldoc );
+            updateStatus(getNamespaceElement($doc, "wps", "Status").text());
+            var lakexml = $doc.find("Lake");
             spinner.stop();
             timer.stop();
             $("#timer").css("display","none");
             parseResults(lakexml, statusLocation);
-          }, 5000);
+          }, 2000);
         } else {
           setTimeout(function() {
             $.ajax({
@@ -390,9 +441,10 @@
               timeout: 9000,
               success: function(s) {
                 var stat_doc = $.parseXML(s.data);
-                updateStatus($(stat_doc).find("Status").text());
+                $doc = $( stat_doc );
+                updateStatus(getNamespaceElement($doc, "wps", "Status").text());
 
-                var lakexml = $(stat_doc).find("ComplexData").find("Lake");
+                var lakexml = $doc.find("Lake");
                 if (lakexml.length == 0) {
                   // No results yet, try again.
                   poll();
@@ -473,7 +525,7 @@
         drawStatus();
 
         if (dev == true) {
-          var x = { data:'<?xml version="1.0" encoding="UTF-8"?> <wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" service="WPS" version="1.0.0" statusLocation="http://64.72.74.103:8080/outputs/3c31262d-6c90-4849-b545-b8939ab80758.xml"> <wps:Process processVersion="1.0"> <ows:Identifier>calc_nutrient_load</ows:Identifier> <ows:Title>Nutrient load calculation service for the Great Lakes</ows:Title> <ows:Abstract>WPS for CHISP1 Scenario #2 that calculates the nutrient loading of the Great Lakes by each tributary</ows:Abstract> </wps:Process> <wps:Status creationTime="2013-03-26 09:23:53.434805"> Process (calc_nutrient_load) has Succeeded at 2013-03-26 09:24:34.947121 </wps:Status> <wps:ProcessOutputs> <wps:Output> <ows:Identifier>nlcs_output</ows:Identifier> <ows:Title>Great Lakes Nutrient Load Calculation Output</ows:Title> <wps:Data> <wps:ComplexData mimeType="text/xml"> <Lake name="ontario" load="82924.1533979"> <Rivers> <River name="My Test Tributary" lat="44" lon="-75" load="41462.0766989" contribution="0.5" /> <River name="My Test Tributary" lat="44" lon="-75.6" load="41462.0766989" contribution="0.5" /> </Rivers> </Lake> </wps:ComplexData> </wps:Data> </wps:Output> </wps:ProcessOutputs> </wps:ExecuteResponse>' }
+          var x = { data:'<?xml version="1.0" encoding="UTF-8"?> <wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" service="WPS" version="1.0.0" statusLocation="http://64.72.74.103:8080/outputs/d88fa173-9c89-47a2-9b2f-10fcd5628cfc.xml"> <wps:Process processVersion="1.0"> <ows:Identifier>calc_nutrient_load</ows:Identifier> <ows:Title>Nutrient load calculation service for the Great Lakes</ows:Title> <ows:Abstract>WPS for CHISP1 Scenario #2 that calculates the nutrient loading of the Great Lakes by each tributary</ows:Abstract> </wps:Process> <wps:Status creationTime="2013-04-04 12:55:10.098809"> Process (calc_nutrient_load) has Succeeded at 2013-04-04 13:28:55.707258 </wps:Status> <wps:ProcessOutputs> <wps:Output> <ows:Identifier>nlcs_output</ows:Identifier> <ows:Title>Great Lakes Nutrient Load Calculation Output</ows:Title> <wps:Data> <wps:ComplexData mimeType="text/xml"> <!--Start Dummy Data--> <!--<Lake name="Ontario" load="500"> <Rivers> <River name="My Test Tributary" lat="41" lon="74" load="300" contribution="60%" /> </Rivers> </Lake>--> <!--End Dummy Data--> <Lake name="ontario" load="40.5213869641"> <Rivers> <River name="Baxter Creek" lat="44.15028" lon="-78.44671631" load="0.000345029981375" contribution="8.51476238166e-06" /> <River name="Beaver Creek" lat="44.53519058" lon="-77.69657898" load="0.00403185998344" contribution="9.94995553093e-05" /> <River name="Black Creek" lat="42.94499969" lon="-79.04222107" load="0.000374789986253" contribution="9.24918948566e-06" /> <River name="Black River (Ontario US)" lat="43.98555556" lon="-75.9247222" load="4.07235873016" contribution="0.100498996586" /> <River name="Blackstock Creek" lat="44.13191986" lon="-78.82897186" load="0.000249332991153" contribution="6.15312085378e-06" /> <River name="Bloomfield Creek" lat="43.99055862" lon="-77.21833038" load="0.00019182800442" contribution="4.73399404097e-06" /> <River name="Bowmanville Creek" lat="43.92147064" lon="-78.70200348" load="0.00376463998699" contribution="9.29050131064e-05" /> <River name="Bronte Creek" lat="43.43688965" lon="-79.86432648" load="0.00542004004169" contribution="0.00013375751542" /> <River name="Burnley Creek" lat="44.19681168" lon="-77.91100311" load="0.00103850002587" contribution="2.56284422542e-05" /> <River name="Burnt River" lat="44.70986176" lon="-78.67752838" load="0.00401760018921" contribution="9.91476474575e-05" /> <River name="Centreville Creek" lat="43.92443848" lon="-79.83444214" load="0.000164920000702" contribution="4.06994955153e-06" /> <River name="Cobourg Brook" lat="43.96493912" lon="-78.18505859" load="0.000617209980488" contribution="1.52317091474e-05" /> <River name="Cold Creek" lat="44.13478088" lon="-77.78688812" load="0.00130199997783" contribution="3.2131179986e-05" /> <River name="Collins Creek" lat="44.25650024" lon="-76.61255646" load="0.00538252988529" contribution="0.00013283182755" /> <River name="Credit River" lat="43.58227921" lon="-79.70874786" load="0.015233400269" contribution="0.000375934818878" /> <River name="Credit River (Erin Branch)" lat="43.77180862" lon="-80.09364319" load="0.000405107997805" contribution="9.9973872603e-06" /> <River name="Credit River West Branch" lat="43.64656067" lon="-79.8662796" load="0.0017394719553" contribution="4.29272560892e-05" /> <River name="Crowe River" lat="44.48155975" lon="-77.68480682" load="0.00703700023651" contribution="0.000173661386338" /> <River name="Demorestville Creek" lat="44.09056091" lon="-77.21056366" load="1.38880004287e-05" contribution="3.42732602933e-07" /> <River name="Don River" lat="43.68585968" lon="-79.3615036" load="0.00466488004494" contribution="0.000115121430791" /> <River name="Duffins Creek" lat="43.85277939" lon="-79.06221771" load="0.00058125" contribution="1.43442770238e-05" /> <River name="Humber River" lat="43.69894028" lon="-79.52039337" load="0.00288299991131" contribution="7.11476118491e-05" /> <River name="Sixteen Mile Creek" lat="43.4991684" lon="-79.77677917" load="6.20000009239e-05" contribution="1.53005623867e-06" /> <River name="Etobicoke Creek" lat="43.60174942" lon="-79.55632782" load="0.000235599997044" contribution="5.81421354734e-06" /> <River name="Farewell Creek" lat="43.88832855" lon="-78.82111359" load="0.000637794020355" contribution="1.57396887949e-05" /> <River name="Four Mile Creek" lat="43.19561005" lon="-79.11332703" load="0.0013331550248" contribution="3.29000343936e-05" /> <River name="Fourteen Mile Creek" lat="43.42145157" lon="-79.70314789" load="0.000634259989634" contribution="1.56524748325e-05" /> <River name="Ganaraska River" lat="43.96833038" lon="-78.29528046" load="0.000421600004435" contribution="1.04043823773e-05" /> <River name="Genessee River" lat="43.1417222" lon="-77.6163056" load="20.8067959024" contribution="0.513476893593" /> <River name="Grindstone Creek" lat="43.30064011" lon="-79.8690033" load="0.00493674991593" contribution="0.000121830724114" /> <River name="Gull River" lat="44.7318306" lon="-78.81806183" load="0.00796079962158" contribution="0.000196459208779" /> <River name="Indian River" lat="44.54047012" lon="-78.0953598" load="0.00131687994146" contribution="3.24983925804e-05" /> <River name="Jackson Creek" lat="44.30982971" lon="-78.37071991" load="0.000369024008751" contribution="9.1068948128e-06" /> <River name="Lynde Creek" lat="43.87549973" lon="-78.96032715" load="0.000645605999231" contribution="1.59324753569e-05" /> <River name="Mariposa Brook" lat="44.28963852" lon="-78.84161377" load="0.000474299991131" contribution="1.17049298325e-05" /> <River name="Mayhew Creek" lat="44.10916901" lon="-77.61253357" load="0.000488807992816" contribution="1.20629630286e-05" /> <River name="Michell Creek" lat="43.96110916" lon="-79.12805939" load="0.000257144991972" contribution="6.34590795718e-06" /> <River name="Millhaven Creek" lat="44.22642136" lon="-76.75906372" load="0.000542190011382" contribution="1.33803418886e-05" /> <River name="Mimico Creek" lat="43.64736176" lon="-79.51969147" load="0.000598919986613" contribution="1.47803427149e-05" /> <River name="Mississagua River" lat="44.67499924" lon="-78.34583282" load="0.00050375" contribution="1.24317067539e-05" /> <River name="Moira River" lat="44.25366974" lon="-77.41918945" load="0.0273234012299" contribution="0.000674295804683" /> <River name="Mountsberg Creek" lat="43.45483017" lon="-80.04582977" load="0.000453096020222" contribution="1.11816513246e-05" /> <River name="Napanee River" lat="44.27750015" lon="-76.92861176" load="0.00157573003459" contribution="3.88863795799e-05" /> <River name="Nonquon River" lat="44.086689" lon="-79.00608063" load="0.000200880007982" contribution="4.9573823364e-06" /> <River name="Oshawa Creek" lat="43.9303093" lon="-78.8915329" load="0.000435704989135" contribution="1.07524697889e-05" /> <River name="Oswegatchie River" lat="44.5994444" lon="-75.37888889" load="0.4975" contribution="0.012277467216" /> <River name="Oswego River" lat="43.45166667" lon="-76.50527778" load="12.3625" contribution="0.305085805946" /> <River name="Otonabee River" lat="44.42224884" lon="-78.27574921" load="0.010416" contribution="0.000257049444266" /> <River name="Ouse River" lat="44.29806137" lon="-78.04493713" load="0.000617209980488" contribution="1.52317091474e-05" /> <River name="Pigeon River" lat="44.12427902" lon="-78.69510651" load="0.000115661000192" contribution="2.85431987544e-06" /> <River name="Raquette River" lat="44.83888889" lon="-74.97888889" load="2.0088" contribution="0.0495738213941" /> <River name="Redhill Creek" lat="43.24097061" lon="-79.77388763" load="0.000609057003692" contribution="1.50305073277e-05" /> <River name="Salmon River" lat="44.20730972" lon="-77.2092514" load="0.00776550035477" contribution="0.000191639549792" /> <River name="Salt Creek" lat="44.1995697" lon="-77.81894684" load="0.000765699971914" contribution="1.88961935728e-05" /> <River name="Skootamatta River" lat="44.54957962" lon="-77.32805634" load="0.0027125" contribution="6.69399594442e-05" /> <River name="Spencer Creek" lat="43.26541901" lon="-79.96427917" load="0.000764088011146" contribution="1.88564130794e-05" /> <River name="Stoney Creek" lat="43.22552872" lon="-79.7511673" load="1.33920006361e-05" contribution="3.30492158325e-07" /> <River name="Trent River" lat="44.17388916" lon="-77.58917236" load="0.072726" contribution="0.00179475594121" /> <River name="Twelve Mile Creek" lat="43.11478043" lon="-79.27455902" load="0.0006345699898" contribution="1.56601251177e-05" /> <River name="Twenty Mile Creek" lat="43.13346863" lon="-79.38324738" load="0.00107160802829" contribution="2.64454923333e-05" /> <River name="Welland River" lat="42.95000076" lon="-79.21666718" load="0.563859" contribution="0.0139150962552" /> <River name="Wilmot Creek" lat="43.93022156" lon="-78.61881256" load="9.89519972801e-05" contribution="2.4419696534e-06" /> <River name="Wilton Creek" lat="44.23931122" lon="-76.84953308" load="0.000397419983149" contribution="9.80765992784e-06" /> </Rivers> </Lake> </wps:ComplexData> </wps:Data> </wps:Output> </wps:ProcessOutputs> </wps:ExecuteResponse>' }
           parseExecute(x);
         } else {
           $.ajax({
@@ -513,9 +565,9 @@
         onSelect: function(t) {
           // What to pass to WPS
           send_date = t;
-          $("#year").html($.datepicker.formatDate("yy", $.datepicker.parseDate($.datepicker.ISO_8601, t)));
-          $("#month").html($.datepicker.formatDate("M yy", $.datepicker.parseDate($.datepicker.ISO_8601, t)));
-          $("#day").html($.datepicker.formatDate("M d yy", $.datepicker.parseDate($.datepicker.ISO_8601, t)));
+          $("#year").text($.datepicker.formatDate("yy", $.datepicker.parseDate($.datepicker.ISO_8601, t)));
+          $("#month").text($.datepicker.formatDate("M yy", $.datepicker.parseDate($.datepicker.ISO_8601, t)));
+          $("#day").text($.datepicker.formatDate("M d yy", $.datepicker.parseDate($.datepicker.ISO_8601, t)));
           $( "#duration" ).change();
         }
       });
@@ -531,7 +583,7 @@
       });
       
       timer = $.timer(function() {
-        $("#timer").html(formatTime(currentTime));
+        $("#timer").text(formatTime(currentTime));
         currentTime += incrementTime / 10;
       });
       timer.set({ time: 100, autostart: false });
